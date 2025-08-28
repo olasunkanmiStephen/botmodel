@@ -17,7 +17,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Tool definition to the model
+
 const tools = [
   {
     type: "function",
@@ -36,7 +36,7 @@ const tools = [
   },
 ];
 
-// Simple helper to call weatherapi.com directly
+
 async function getWeather(loc) {
   const apiKey = process.env.WEATHER_API_KEY;
   const url = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${encodeURIComponent(
@@ -59,7 +59,6 @@ async function handleWeather(message) {
         content: message },
     ];
 
-    // Ask model with tool
     let response = await openai.responses.create({
       model: "gpt-4.1-mini",
       tools,
@@ -77,18 +76,15 @@ async function handleWeather(message) {
       }
     });
 
-    // Run tool to get weather result
     const weatherStr = await getWeather(functionCallArguments.location);
     const result = { weather: weatherStr };
 
-    // Provides tool result
     input.push({
       type: "function_call_output",
       call_id: functionCall.call_id,
       output: JSON.stringify(result),
     });
 
-    // Asking OpenAI for final response
     response = await openai.responses.create({
       model: "gpt-4.1-mini",
       instructions: `You are a helpful assistant that provides weather updates. Use the information provided by the tool to answer the user's question. Follow these guidelines:
@@ -115,7 +111,6 @@ async function handleWeather(message) {
       }
     });
 
-    // Fallback if model didn’t respond cleanly
     if (!finalMessage) finalMessage = result.weather;
 
     return finalMessage;
@@ -125,11 +120,9 @@ async function handleWeather(message) {
   }
 }
 
-// 🔹 Chat route
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
   try {
-    // First normal AI response
     const response = await openai.responses.create({
       model: "gpt-4.1-mini",
       input: [{ role: "user", content: message }],
@@ -146,10 +139,6 @@ app.post("/chat", async (req, res) => {
       }
     });
 
-    /**
-     * 🔹 Check if user asked about weather
-     * If yes, call our weather function instead of generic AI
-     */
     if (/weather in (.+)/i.test(message)) {
       const location = message.match(/weather in (.+)/i)[1];
       finalMessage = await handleWeather(location);
@@ -162,10 +151,7 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-/**
- * 🔹 Weather route (kept intact as you wrote it)
- * Now it just reuses the `handleWeather` function above.
- */
+
 app.get("/weather", async (req, res) => {
   const location = req.query.location;
   if (!location) {
