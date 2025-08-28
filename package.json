@@ -23,6 +23,7 @@
     "openai": "^5.16.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/node": "^24.3.0"
   }
 }
