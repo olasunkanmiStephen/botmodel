@@ -4,9 +4,12 @@ import dotenv from "dotenv";
 import express from "express";
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
+import cors from "cors"
 
 dotenv.config();
 const app = express();
+
+app.use(cors())
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -46,12 +49,42 @@ async function getWeather(loc) {
   return `${data.location.name}: ${data.current.temp_c}°C, ${data.current.condition.text}`;
 }
 
+app.use(express.json());
+
+app.post("/chat", async (req, res) => {
+  const { message } = req.body;
+  try {
+    const response = await openai.responses.create({
+      model: "gpt-4.1-mini",
+      input: [{ role: "user", content: message }],
+    });
+
+    let finalMessage = "";
+    response.output.forEach((item) => {
+      if (item.type === "message") {
+        item.content.forEach((c) => {
+          if (c.type === "output_text") {
+            finalMessage += c.text;
+          }
+        });
+      }
+    });
+
+    res.json({ reply: finalMessage });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 app.get("/weather", async (req, res) => {
   const location = req.query.location;
   if (!location) {
     return res.status(400).json({ error: "Location is required" });
   }
 
+  
   try {
     let input = [
       { role: "user", content: `What's the weather in ${location}?` },
