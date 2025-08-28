@@ -4,12 +4,12 @@ import dotenv from "dotenv";
 import express from "express";
 import { fileURLToPath } from "url";
 import path, { dirname } from "path";
-import cors from "cors"
+import cors from "cors";
 
 dotenv.config();
 const app = express();
 
-app.use(cors())
+app.use(cors());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -36,8 +36,9 @@ const tools = [
   },
 ];
 
+// Simple helper to call weatherapi.com directly
 async function getWeather(loc) {
-  const apiKey = process.env.WEATHER_API_KEY; // ✅ match .env
+  const apiKey = process.env.WEATHER_API_KEY;
   const url = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${encodeURIComponent(
     loc
   )}&aqi=no`;
@@ -51,43 +52,11 @@ async function getWeather(loc) {
 
 app.use(express.json());
 
-app.post("/chat", async (req, res) => {
-  const { message } = req.body;
-  try {
-    const response = await openai.responses.create({
-      model: "gpt-4.1-mini",
-      input: [{ role: "user", content: message }],
-    });
-
-    let finalMessage = "";
-    response.output.forEach((item) => {
-      if (item.type === "message") {
-        item.content.forEach((c) => {
-          if (c.type === "output_text") {
-            finalMessage += c.text;
-          }
-        });
-      }
-    });
-
-    res.json({ reply: finalMessage });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-app.get("/weather", async (req, res) => {
-  const location = req.query.location;
-  if (!location) {
-    return res.status(400).json({ error: "Location is required" });
-  }
-
-  
+async function handleWeather(message) {
   try {
     let input = [
-      { role: "user", content: `What's the weather in ${location}?` },
+      { role: "user", 
+        content: message },
     ];
 
     // Ask model with tool
@@ -122,8 +91,15 @@ app.get("/weather", async (req, res) => {
     // Asking OpenAI for final response
     response = await openai.responses.create({
       model: "gpt-4.1-mini",
-      instructions:
-        "Respond only with the weather retrieved by the tool, and also talk a bit more about the previous weather.",
+      instructions: `You are a helpful assistant that provides weather updates. Use the information provided by the tool to answer the user's question. Follow these guidelines:
+
+1. Only use the weather information retrieved by the tool. Do not guess or make up weather data.
+2. Include the current temperature, weather condition, and city name exactly as provided by the tool.
+3. If previous weather information is available, summarize or compare it briefly, highlighting any changes (e.g., warmer, colder, or different conditions).
+4. Write in a friendly, natural tone, as if you are explaining the weather to a user.
+5. Keep your response concise but informative, adding a small additional comment or tip about the weather if appropriate (e.g., "It might be sunny later, so take sunglasses!").
+6. Avoid including any unrelated information or repeating irrelevant details.
+`,
       tools,
       input,
     });
@@ -141,9 +117,64 @@ app.get("/weather", async (req, res) => {
 
     // Fallback if model didn’t respond cleanly
     if (!finalMessage) finalMessage = result.weather;
-    res.json({
-      aiWeather: finalMessage,
+
+    return finalMessage;
+  } catch (err) {
+    console.error(err);
+    return "Error fetching weather data.";
+  }
+}
+
+// 🔹 Chat route
+app.post("/chat", async (req, res) => {
+  const { message } = req.body;
+  try {
+    // First normal AI response
+    const response = await openai.responses.create({
+      model: "gpt-4.1-mini",
+      input: [{ role: "user", content: message }],
     });
+
+    let finalMessage = "";
+    response.output.forEach((item) => {
+      if (item.type === "message") {
+        item.content.forEach((c) => {
+          if (c.type === "output_text") {
+            finalMessage += c.text;
+          }
+        });
+      }
+    });
+
+    /**
+     * 🔹 Check if user asked about weather
+     * If yes, call our weather function instead of generic AI
+     */
+    if (/weather in (.+)/i.test(message)) {
+      const location = message.match(/weather in (.+)/i)[1];
+      finalMessage = await handleWeather(location);
+    }
+
+    res.json({ reply: finalMessage });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * 🔹 Weather route (kept intact as you wrote it)
+ * Now it just reuses the `handleWeather` function above.
+ */
+app.get("/weather", async (req, res) => {
+  const location = req.query.location;
+  if (!location) {
+    return res.status(400).json({ error: "Location is required" });
+  }
+
+  try {
+    const aiWeather = await handleWeather(location);
+    res.json({ aiWeather });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
