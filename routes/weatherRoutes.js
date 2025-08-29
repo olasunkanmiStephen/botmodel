@@ -1,5 +1,5 @@
 import express from "express";
-import { handleWeather } from "../services/openaiService.js";
+import { handleFunctionCall } from "../services/openaiService.js";
 
 const router = express.Router();
 
@@ -9,8 +9,9 @@ router.get("/", async (req, res) => {
     return res.status(400).json({ error: "Location is required" });
   }
 
+  
   try {
-    const aiWeather = await handleWeather(location);
+    const aiWeather = await handleFunctionCall(location);
     res.json({ aiWeather });
   } catch (err) {
     console.error(err);

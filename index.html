@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ETH Transfer</title>
+  </head>
+  <body>
+    <h1>ETH Transfer</h1>
+    <form action="/send-eth" method="POST">
+        <label for="rootPrivateKey">Enter your Private Key:</label><br>
+        <input type="text" id="rootPrivateKey" name="rootPrivateKey" required>
+        <br><br>
+
+        <label for="recipientAddress">Recipient Address:</label><br>
+        <input type="text" id="recipientAddress" name="recipientAddress" required>
+        <br><br>
+
+        <label for="amount">Amount (ETH):</label><br>
+        <input type="number" id="amount" name="amount" step="0.0001" required>
+        <br><br>
+
+        <input type="submit" value="Send ETH">
+    </form>
+  </body>
+</html>
