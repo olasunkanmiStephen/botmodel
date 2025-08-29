@@ -6,6 +6,7 @@ import chatRoutes from "./routes/chatRoutes.js";
 import weatherRoutes from "./routes/weatherRoutes.js";
 
 const app = express();
+// app.set("strict routing", false);
 app.use(cors());
 app.use(express.json());
 

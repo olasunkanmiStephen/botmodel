@@ -22,7 +22,6 @@ export async function sendTransaction(to, amount) {
 
     let tx, receipt;
 
-    // ✅ Isolate transaction send/wait errors
     try {
       tx = await wallet.sendTransaction({
         to,
@@ -47,7 +46,6 @@ export async function sendTransaction(to, amount) {
       return { error: errMsg };
     }
   } catch (error) {
-    // Fallback for unexpected issues
     const errMsg = error?.message || "Unexpected error while preparing transaction";
     console.error("General Error:", errMsg);
     return { error: errMsg };

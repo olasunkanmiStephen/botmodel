@@ -146,10 +146,15 @@ export async function chatWithAI(message) {
       finalMessage = await handleFunctionCall(location);
     }
 
-    if (/send (\d+(\.\d+)?) eth to (0x[a-fA-F0-9]{40})/i.test(message)) {
-      const [, amount, , to] = message.match(
-        /send (\d+(\.\d+)?) eth to (0x[a-fA-F0-9]{40})/i
+    if (
+      /(send|transfer|pay|move|give)\s+(\d+(\.\d+)?)\s*(eth|ether)\s+to\s+(0x[a-fA-F0-9]{40})/i.test(
+        message
+      )
+    ) {
+      const [, , amount, , , to] = message.match(
+        /(send|transfer|pay|move|give)\s+(\d+(\.\d+)?)\s*(eth|ether)\s+to\s+(0x[a-fA-F0-9]{40})/i
       );
+
       finalMessage = await handleFunctionCall(JSON.stringify({ to, amount }));
     }
 
