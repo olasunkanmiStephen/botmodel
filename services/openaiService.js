@@ -29,7 +29,6 @@ export async function handleFunctionCall(message) {
       }
     });
 
-
     let result;
     if (functionCall) {
       if (functionCall.name === "get_weather") {
@@ -37,11 +36,33 @@ export async function handleFunctionCall(message) {
       }
 
       if (functionCall.name === "send_transaction") {
-        const tx = await sendTransaction(
-          functionCallArguments.to,
-          functionCallArguments.amount
-        );
-        result = { txHash: tx?.hash || "Transaction failed" };
+        try {
+          const tx = await sendTransaction(
+            functionCallArguments.to,
+            functionCallArguments.amount
+          );
+          if (tx?.error) {
+            result = {
+              txHash: null,
+              status: "failed",
+              error: tx.error,
+            };
+          } else if (tx?.hash) {
+            result = {
+              txHash: tx.hash,
+              status: "confirmed",
+              receipt: tx.receipt,
+            };
+          } else {
+            result = {
+              txHash: null,
+              status: "unknown",
+              error: "Unexpected transaction result.",
+            };
+          }
+        } catch (error) {
+          result = { txHash: null, status: "failed", error: error.message };
+        }
       }
       input.push({
         type: "function_call_output",
