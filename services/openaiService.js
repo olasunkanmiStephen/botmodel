@@ -1,149 +1,169 @@
 import OpenAI from "openai";
-import { tools } from "../utils/tools.js";
-import { getWeather } from "./weatherService.js";
 import dotenv from "dotenv";
+import { getWeather } from "./weatherService.js";
 import { sendTransaction } from "./web3Service.js";
-dotenv.config();
+import { type } from "os";
 
+dotenv.config();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Define tools
+const tools = [
+  {
+    type: "function",
+    name: "get_weather",
+    description: "Get the current weather for a location",
+    parameters: {
+      type: "object",
+      properties: {
+        location: { type: "string", description: "City or place" },
+      },
+      required: ["location"],
+    },
+  },
+  {
+    type: "function",
+    name: "send_transaction",
+    description: "Send an Ethereum transaction",
+    parameters: {
+      type: "object",
+      properties: {
+        to: {
+          type: "string",
+          description: "Recipient Ethereum address (0x...)",
+        },
+        amount: {
+          type: "number",
+          description: "Amount of ETH to send",
+        },
+      },
+      required: ["to", "amount"],
+    },
+  },
+];
+
+function extractFinalMessage(response) {
+  let finalMessage = "";
+  if (!response?.output) return "";
+
+  response.output.forEach((item) => {
+    if (item.type === "message" && item.content) {
+      item.content.forEach((c) => {
+        if (c.type === "output_text") {
+          finalMessage += c.text;
+        }
+      });
+    }
+  });
+  return finalMessage || "";
+}
 
 export async function handleFunctionCall(message) {
   try {
-    let input = [{ role: "user", content: message }];
+    // Keep a running list of conversation input
+    let input = [
+      {
+        role: "user",
+        content: [{ type: "input_text", text: String(message) }],
+      },
+    ];
 
-    // Ask AI with tools
+    console.log("initial input >>> ", JSON.stringify(input, null, 2));
+
+    // Step 1: ask model with tools
     let response = await openai.responses.create({
       model: "gpt-4.1-mini",
       tools,
       input,
     });
 
-    let functionCall = null;
-    let functionCallArguments = null;
-    input = input.concat(response.output);
+    console.log("first Response >>> ", JSON.stringify(response, null, 2));
 
-    response.output.forEach((item) => {
+    // Step 2: check if function call requested
+    for (const item of response.output) {
       if (item.type === "function_call") {
-        functionCall = item;
-        functionCallArguments = JSON.parse(item.arguments);
-      }
-    });
-
-    let result;
-    if (functionCall) {
-      if (functionCall.name === "get_weather") {
-        result = { weather: await getWeather(functionCallArguments.location) };
-      }
-
-      if (functionCall.name === "send_transaction") {
+        const { name, arguments: rawArgs, call_id } = item;
+        let args = {};
         try {
-          const tx = await sendTransaction(
-            functionCallArguments.to,
-            functionCallArguments.amount
-          );
-          if (tx?.error) {
-            result = {
-              txHash: null,
-              status: "failed",
-              error: tx.error,
-            };
-          } else if (tx?.hash) {
-            result = {
-              txHash: tx.hash,
-              status: "confirmed",
-              receipt: tx.receipt,
-            };
-          } else {
-            result = {
-              txHash: null,
-              status: "unknown",
-              error: "Unexpected transaction result.",
-            };
-          }
-        } catch (error) {
-          result = { txHash: null, status: "failed", error: error.message };
+          args = JSON.parse(rawArgs);
+        } catch (err) {
+          console.error("Bad JSON in function args:", err);
         }
-      }
-      input.push({
-        type: "function_call_output",
-        call_id: functionCall.call_id,
-        output: JSON.stringify(result),
-      });
 
-      // AI final response
-      response = await openai.responses.create({
-        model: "gpt-4.1-mini",
-        instructions: `
-          You are a helpful assistant that provides weather updates and Ethereum (ETH) transaction details. Use the information provided by the tools to answer the user's question. Follow these guidelines:
-
-          **Weather Updates:**
-          1. Only use the weather information retrieved by the tool. Do not guess or make up weather data.
-          2. Include the current temperature, weather condition, and city name exactly as provided by the tool.
-          3. If previous weather information is available, summarize or compare it briefly, highlighting any changes (e.g., warmer, colder, or different conditions).
-          4. Write in a friendly, natural tone, as if you are explaining the weather to a user.
-          5. Keep your response concise but informative, adding a small additional comment or tip about the weather if appropriate (e.g., "It might be sunny later, so take sunglasses!").
-          6. Avoid including any unrelated information or repeating irrelevant details.
-
-          **Ethereum Transaction Updates:**
-          1. Only use Ethereum transaction details retrieved by the tool (e.g., transaction hash, status, gas fee, block confirmation). Do not invent or assume details.  
-          2. Clearly state the transaction status (e.g., pending, confirmed, failed) and provide the transaction hash.  
-          3. If available, include the amount of ETH sent, the receiving address, and the gas fee used.  
-          4. If previous transaction information is available, summarize or compare it (e.g., “This transaction used a higher gas fee than your last one, so it confirmed faster”).  
-          5. Keep the explanation simple and user-friendly, avoiding technical jargon unless requested.  
-          6. Provide a quick tip if useful (e.g., “Gas fees are lower right now, so it’s a good time to transact”).  
-
-          **General:**
-          - Always keep responses concise, clear, and helpful.   
-        `,
-        tools,
-        input,
-      });
-    }
-
-    let finalMessage = "";
-    response.output.forEach((item) => {
-      if (item.type === "message") {
-        item.content.forEach((c) => {
-          if (c.type === "output_text") {
-            finalMessage += c.text;
+        // Step 3: execute actual function
+        let result;
+        if (name === "get_weather") {
+          result = { weather: await getWeather(args.location) };
+        } else if (name === "send_transaction") {
+          try {
+            const tx = await sendTransaction(args.to, args.amount);
+            result = tx?.hash
+              ? { txHash: tx.hash, status: "confirmed", receipt: tx.receipt }
+              : {
+                  txHash: null,
+                  status: "failed",
+                  error: tx?.error || "Unknown",
+                };
+          } catch (err) {
+            result = { txHash: null, status: "failed", error: err.message };
           }
-        });
-      }
-    });
+        }
 
-    if (!finalMessage && result) {
-      finalMessage = JSON.stringify(result);
+        console.log("Function Result >>>", result);
+        input.push(item);
+        input.push({
+          type: "function_call_output",
+          call_id,
+          output: JSON.stringify(result),
+        });
+
+        console.log(
+          "Updated Input with Tool Result >>>",
+          JSON.stringify(input, null, 2)
+        );
+
+        // Step 5: re-run model to get natural reply
+        response = await openai.responses.create({
+          model: "gpt-4.1-mini",
+          tools,
+          input,
+          instructions: `You are a helpful assistant that primarily uses tool outputs when the user is asking for real-world, dynamic, or location-specific data (e.g., weather in Lagos, today’s forecast). If the user is asking for a definition, explanation, or concept (e.g., "what is a weather forecast"), respond directly without calling tools. Always be concise, friendly, and accurate.`,
+        });
+
+        console.log("Second Response >>>", JSON.stringify(response, null, 2));
+      }
     }
 
-    return finalMessage;
+    // Step 6: return final message
+    return extractFinalMessage(response) || "No output.";
   } catch (err) {
-    console.error(err);
-    return "Error fetching weather data.";
+    console.error("handleFunctionCall error:", err);
+    return "Error handling function call.";
   }
 }
 
 export async function chatWithAI(message) {
   try {
-    const response = await openai.responses.create({
+    let response = await openai.responses.create({
       model: "gpt-4.1-mini",
-      input: [{ role: "user", content: message }],
+      tools,
+      input: [
+        {
+          role: "user",
+          content: [{ type: "input_text", text: String(message) }],
+        },
+      ],
     });
 
-    let finalMessage = "";
-    response.output.forEach((item) => {
-      if (item.type === "message") {
-        item.content.forEach((c) => {
-          if (c.type === "output_text") {
-            finalMessage += c.text;
-          }
-        });
-      }
-    });
+    console.log("Initial Chat Response >>>", JSON.stringify(response, null, 2));
 
-    // Special case: "weather in ..."
+    let finalMessage = extractFinalMessage(response);
+
+    // Pattern matching → route into tool handler
     if (/weather in (.+)/i.test(message)) {
       const location = message.match(/weather in (.+)/i)[1];
-      finalMessage = await handleFunctionCall(location);
+      console.log("Weather Route Triggered >>>", location);
+      finalMessage = await handleFunctionCall(`Weather in ${location}`);
     }
 
     if (
@@ -154,13 +174,13 @@ export async function chatWithAI(message) {
       const [, , amount, , , to] = message.match(
         /(send|transfer|pay|move|give)\s+(\d+(\.\d+)?)\s*(eth|ether)\s+to\s+(0x[a-fA-F0-9]{40})/i
       );
-
-      finalMessage = await handleFunctionCall(JSON.stringify({ to, amount }));
+      console.log("Transaction Route Triggered >>>", { to, amount });
+      finalMessage = await handleFunctionCall(`send ${amount} ETH to ${to}`);
     }
 
-    return finalMessage;
+    return finalMessage || "I couldn't generate a response.";
   } catch (err) {
-    console.error(err);
+    console.error("chatWithAI error:", err);
     return "Error communicating with AI.";
   }
 }

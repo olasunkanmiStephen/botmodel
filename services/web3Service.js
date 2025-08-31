@@ -25,11 +25,12 @@ export async function sendTransaction(to, amount) {
     try {
       tx = await wallet.sendTransaction({
         to,
-        value: ethers.parseEther(amount),
+        value: ethers.parseEther(String(amount)) ,
       });
 
       console.log("Transaction submitted!");
       console.log("hash:", tx.hash);
+      
 
       receipt = await tx.wait();
       console.log("Transaction confirmed");
