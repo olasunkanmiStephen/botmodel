@@ -127,7 +127,8 @@ export async function handleFunctionCall(message) {
           model: "gpt-4.1-mini",
           tools,
           input,
-          instructions: `You are a helpful assistant that primarily uses tool outputs when the user is asking for real-world, dynamic, or location-specific data (e.g., weather in Lagos, today’s forecast). If the user is asking for a definition, explanation, or concept (e.g., "what is a weather forecast"), respond directly without calling tools. Always be concise, friendly, and accurate.`,
+          instructions: `
+          You are a helpful assistant that primarily uses tool outputs when the user is asking for real-world, dynamic, or location-specific data (e.g., weather in Lagos, today’s forecast). If the user is asking for a definition, explanation, or concept (e.g., "what is a weather forecast"), respond directly without calling tools. Always be concise, friendly, and accurate.`,
         });
 
         console.log("Second Response >>>", JSON.stringify(response, null, 2));

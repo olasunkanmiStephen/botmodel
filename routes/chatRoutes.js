@@ -13,8 +13,10 @@ router.post("/", authMiddleware, async (req, res) => {
       role: "user",
       message,
     });
-    
-    const reply = await chatWithAI(message);
+
+    const userMessages = await Message.find({ userId: req.user.id }).sort({createdAt: 1})
+
+    const reply = await chatWithAI(userMessages);
 
 
     const botMessage = await Message.create({
