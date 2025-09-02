@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 import { getWeather } from "./weatherService.js";
 import { sendTransaction } from "./web3Service.js";
-import { type } from "os";
+import ethWeatherAssistantPrompt from "./instruction.js"
 
 dotenv.config();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -127,8 +127,7 @@ export async function handleFunctionCall(message) {
           model: "gpt-4.1-mini",
           tools,
           input,
-          instructions: `
-          You are a helpful assistant that primarily uses tool outputs when the user is asking for real-world, dynamic, or location-specific data (e.g., weather in Lagos, today’s forecast). If the user is asking for a definition, explanation, or concept (e.g., "what is a weather forecast"), respond directly without calling tools. Always be concise, friendly, and accurate.`,
+          instructions: ethWeatherAssistantPrompt,
         });
 
         console.log("Second Response >>>", JSON.stringify(response, null, 2));
@@ -145,6 +144,16 @@ export async function handleFunctionCall(message) {
 
 export async function chatWithAI(message) {
   try {
+    if (/summary/i.test(message)) {
+      let response = await openai.responses.create({
+        model: "gpt-4.1-mini",
+        input: [
+          { role: "user", content: [{ type: "input_text", text: message }] },
+        ],
+      });
+      return extractFinalMessage(response) || "No output.";
+    }
+
     let response = await openai.responses.create({
       model: "gpt-4.1-mini",
       tools,

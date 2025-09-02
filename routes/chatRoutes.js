@@ -9,21 +9,24 @@ router.post("/", authMiddleware, async (req, res) => {
   const { message } = req.body;
   try {
     await Message.create({
-      userId: req.user.id,
+      userId: req.user.userId,
       role: "user",
       message,
     });
 
-    const userMessages = await Message.find({ userId: req.user.id }).sort({createdAt: 1})
+    const userMessages = await Message.find({ userId: req.user.userId }).sort({createdAt: 1})
 
-    const reply = await chatWithAI(userMessages);
+    const messageTexts = userMessages.map(msg => msg.message).join("\n");
+
+    const reply = await chatWithAI(messageTexts);
 
 
     const botMessage = await Message.create({
-      userId: req.user.id,
+      userId: req.user.userId,
       role: "assistant",
       message: reply,
     });
+    
 
     res.json({ reply: botMessage.message });
   } catch (err) {
@@ -34,11 +37,12 @@ router.post("/", authMiddleware, async (req, res) => {
 
 router.get("/history", authMiddleware, async (req, res) => {
   try {
-    const history = await Message.find({ userId: req.user.id }).sort({
+    const userId = req.user.userId;
+    const history = await Message.find({ userId }).sort({
       createdAt: 1,
     });
     res.json(history);
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
