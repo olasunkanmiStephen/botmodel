@@ -3,44 +3,10 @@ import dotenv from "dotenv";
 import { getWeather } from "./weatherService.js";
 import { sendTransaction } from "./web3Service.js";
 import ethWeatherAssistantPrompt from "./instruction.js"
+import tools from "../utils/tools.js"
 
 dotenv.config();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-// Define tools
-const tools = [
-  {
-    type: "function",
-    name: "get_weather",
-    description: "Get the current weather for a location",
-    parameters: {
-      type: "object",
-      properties: {
-        location: { type: "string", description: "City or place" },
-      },
-      required: ["location"],
-    },
-  },
-  {
-    type: "function",
-    name: "send_transaction",
-    description: "Send an Ethereum transaction",
-    parameters: {
-      type: "object",
-      properties: {
-        to: {
-          type: "string",
-          description: "Recipient Ethereum address (0x...)",
-        },
-        amount: {
-          type: "number",
-          description: "Amount of ETH to send",
-        },
-      },
-      required: ["to", "amount"],
-    },
-  },
-];
 
 function extractFinalMessage(response) {
   let finalMessage = "";

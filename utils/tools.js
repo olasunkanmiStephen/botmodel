@@ -12,20 +12,16 @@ const connect = async () => {
   }
 };
 
-export default connect;
 
-export const tools = [
+const tools = [
   {
     type: "function",
     name: "get_weather",
-    description: "Get the current weather in a given location.",
+    description: "Get the current weather for a location",
     parameters: {
       type: "object",
       properties: {
-        location: {
-          type: "string",
-          description: "The city and state, e.g. San Francisco, CA",
-        },
+        location: { type: "string", description: "City or place" },
       },
       required: ["location"],
     },
@@ -39,14 +35,15 @@ export const tools = [
       properties: {
         to: {
           type: "string",
-          description: "The recipient Ethereum address",
+          description: "Recipient Ethereum address (0x...)",
         },
         amount: {
-          type: "string",
-          description: "The amount of Eth to send (as a string, e.g '0.01')",
+          type: "number",
+          description: "Amount of ETH to send",
         },
       },
       required: ["to", "amount"],
     },
   },
 ];
+export default { tools, connect };
