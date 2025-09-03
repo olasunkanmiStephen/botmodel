@@ -4,6 +4,7 @@ import { getWeather } from "./weatherService.js";
 import { sendTransaction } from "./web3Service.js";
 import ethWeatherAssistantPrompt from "./instruction.js"
 import tools from "../utils/tools.js"
+import { webSearch } from "./websearchService.js";
 
 dotenv.config();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -58,6 +59,7 @@ export async function handleFunctionCall(message) {
 
         // Step 3: execute actual function
         let result;
+
         if (name === "get_weather") {
           result = { weather: await getWeather(args.location) };
         } else if (name === "send_transaction") {
@@ -73,6 +75,8 @@ export async function handleFunctionCall(message) {
           } catch (err) {
             result = { txHash: null, status: "failed", error: err.message };
           }
+        } else if (name === "web_search") {
+            result = {search: await webSearch(args.query)}
         }
 
         console.log("Function Result >>>", result);

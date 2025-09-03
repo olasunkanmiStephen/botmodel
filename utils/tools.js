@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { type } from "os";
 
 
 const connect = async () => {
@@ -45,5 +46,20 @@ const tools = [
       required: ["to", "amount"],
     },
   },
+  {
+    type:"function",
+    name: "web_search",
+    description: "Perform a web search and retrn relevant results",
+    input_Schema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "String",
+          description: "Search query to look to look up on the web"
+        },
+        required: ["query"],
+      }
+    }
+  }
 ];
 export default { tools, connect };
