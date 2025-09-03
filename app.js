@@ -4,12 +4,17 @@ import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import chatRoutes from "./routes/chatRoutes.js";
 import weatherRoutes from "./routes/weatherRoutes.js";
-import authRoutes from "./routes/authRoutes.js"
-
+import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 app.set("strict routing", false);
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://chatassistant-5m3c.vercel.app", // your frontend domain
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // static public folder
@@ -18,7 +23,7 @@ const __dirname = dirname(__filename);
 app.use(express.static(path.join(__dirname, "public")));
 
 // routes
-app.use("/auth", authRoutes)
+app.use("/auth", authRoutes);
 app.use("/chat", chatRoutes);
 app.use("/weather", weatherRoutes);
 
