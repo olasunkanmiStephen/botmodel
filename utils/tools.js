@@ -58,8 +58,8 @@ const tools = [
           type: "string",
           description: "Search query to look to look up on the web"
         },
-        required: ["query"],
-      }
+      },
+      required: ["query"],
     }
   },
   {
@@ -81,8 +81,11 @@ const tools = [
     type: "function",
     name: "get_gps",
     description: "Get the current real-time GPS location (lat/lon, city, country).",
-    input_schema: { type: "object", properties: {} },
+    input_schema: { type: "object", properties: {
+      
+    } },
   }
 ];
+
 
 export default tools;
