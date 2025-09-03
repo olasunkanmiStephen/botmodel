@@ -9,19 +9,23 @@ import authRoutes from "./routes/authRoutes.js";
 const app = express();
 app.set("strict routing", false);
 
-
 const allowedOrigins = [
-    "https://chatassistant-ten.vercel.app",
-    "http://localhost:5174",
+  "https://chatassistant-ten.vercel.app",
+  "http://localhost:5174",
 ];
-app.use(cors({
-  origin: allowedOrigins,  
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,  
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
