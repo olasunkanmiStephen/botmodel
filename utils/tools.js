@@ -76,6 +76,12 @@ const tools = [
       },
       required: ["address"]
     }
+  },
+  {
+    type: "function",
+    name: "get_gps",
+    description: "Get the current real-time GPS location (lat/lon, city, country).",
+    input_schema: { type: "object", properties: {} },
   }
 ];
 
