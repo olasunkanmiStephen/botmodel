@@ -25,12 +25,11 @@ export async function sendTransaction(to, amount) {
     try {
       tx = await wallet.sendTransaction({
         to,
-        value: ethers.parseEther(String(amount)) ,
+        value: ethers.parseEther(String(amount)),
       });
 
       console.log("Transaction submitted!");
       console.log("hash:", tx.hash);
-      
 
       receipt = await tx.wait();
       console.log("Transaction confirmed");
@@ -47,8 +46,28 @@ export async function sendTransaction(to, amount) {
       return { error: errMsg };
     }
   } catch (error) {
-    const errMsg = error?.message || "Unexpected error while preparing transaction";
+    const errMsg =
+      error?.message || "Unexpected error while preparing transaction";
     console.error("General Error:", errMsg);
+    return { error: errMsg };
+  }
+}
+
+export async function getBalance(address) {
+  try {
+    const provider = new ethers.JsonRpcApiProvider(process.env.RPC_URL);
+
+    ethers.getAddress(address);
+
+    const balanceWei = await provider.getBalance(address);
+    const balanceEth = ethers.formatEther(balanceWei);
+
+    console.log(`Balance of ${address}: ${balanceEth} ETH`);
+
+    return { address, balanceEth };
+  } catch (error) {
+    const errMsg = error?.message || "Failed to fetch balance";
+    console.error("GetBalance Error:", errMsg);
     return { error: errMsg };
   }
 }

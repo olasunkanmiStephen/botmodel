@@ -51,15 +51,30 @@ const tools = [
     type:"function",
     name: "web_search",
     description: "Perform a web search and retrn relevant results",
-    input_Schema: {
+    parameters: {
       type: "object",
       properties: {
         query: {
-          type: "String",
+          type: "string",
           description: "Search query to look to look up on the web"
         },
         required: ["query"],
       }
+    }
+  },
+  {
+    type: "function",
+    name: "get_balance",
+    description: "Get the ETH balance of an Ethereum address",
+    parameters: {
+      type: "object",
+      properties: {
+        address: {
+          type: "string",
+          description: "Ethereum address (0x...)"
+        },
+      },
+      required: ["address"]
     }
   }
 ];

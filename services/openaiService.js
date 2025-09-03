@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import { getWeather } from "./weatherService.js";
-import { sendTransaction } from "./web3Service.js";
+import { getBalance, sendTransaction } from "./web3Service.js";
 import ethWeatherAssistantPrompt from "./instruction.js"
 import tools from "../utils/tools.js"
 import { webSearch } from "./websearchService.js";
@@ -75,6 +75,8 @@ export async function handleFunctionCall(message) {
           } catch (err) {
             result = { txHash: null, status: "failed", error: err.message };
           }
+        } else if (name === "get_balance") {
+            result = await getBalance(args.address)
         } else if (name === "web_search") {
             result = {search: await webSearch(args.query)}
         }
