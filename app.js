@@ -9,18 +9,25 @@ import authRoutes from "./routes/authRoutes.js";
 const app = express();
 app.set("strict routing", false);
 
+
+const allowedOrigins = [
+    "https://chatassistant-5m3c.vercel.app",
+    "http://localhost:5174",
+];
+
 app.use((req, res, next) => {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://chatassistant-5m3c.vercel.app"
-  );
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
 });
+
 app.use(
   cors({
-    origin: "https://chatassistant-5m3c.vercel.app", // your frontend domain
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
