@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
-import { type } from "os";
 
 
-const connect = async () => {
+export const connect = async () => {
   try {
     console.log("Attempting to connect to database.....");
     await mongoose.connect(process.env.MONGO_URI, {});
@@ -12,6 +11,8 @@ const connect = async () => {
     process.exit(1);
   }
 };
+
+
 
 
 const tools = [
@@ -62,4 +63,5 @@ const tools = [
     }
   }
 ];
-export default { tools, connect };
+
+export default tools;
