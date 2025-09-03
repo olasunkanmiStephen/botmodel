@@ -11,10 +11,13 @@ app.set("strict routing", false);
 app.use(
   cors({
     origin: "https://chatassistant-5m3c.vercel.app", // your frontend domain
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
+
+app.options("*", cors());
+
 app.use(express.json());
 
 // static public folder
