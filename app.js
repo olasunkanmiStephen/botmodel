@@ -15,7 +15,7 @@ const allowedOrigins = [
     "http://localhost:5174",
 ];
 app.use(cors({
-  origin: 'https://travelai-nu.vercel.app',  
+  origin: allowedOrigins,  
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,  
