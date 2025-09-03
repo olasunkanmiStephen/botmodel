@@ -11,7 +11,7 @@ app.set("strict routing", false);
 
 
 const allowedOrigins = [
-    "https://chatassistant-5m3c.vercel.app",
+    "https://chatassistant-ten.vercel.app",
     "http://localhost:5174",
 ];
 
