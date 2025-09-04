@@ -11,14 +11,21 @@ app.set("strict routing", false);
 
 const allowedOrigins = [
   "https://chatassistant-ten.vercel.app",
+  "https://www.chatassistant-ten.vercel.app",
+  "http://localhost:5173",
   "http://localhost:5174",
 ];
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        origin.includes("localhost")
+      ) {
         callback(null, true);
       } else {
+        console.log("Blocked by CORS >>>", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
