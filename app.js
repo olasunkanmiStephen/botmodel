@@ -10,6 +10,7 @@ const app = express();
 app.set("strict routing", false);
 
 const allowedOrigins = [
+  "https://botmodel-eta.vercel.app",
   "https://chatassistant-ten.vercel.app",
   "https://www.chatassistant-ten.vercel.app",
   "http://localhost:5173",
@@ -29,10 +30,12 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
+
+app.options("*", cors());
 
 app.use(express.json());
 
